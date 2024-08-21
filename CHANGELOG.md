@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/shiv-source/mapify-cli/compare/v1.0.1...v1.0.2) (2024-08-21)
+
+
+### Bug Fixes
+
+* fixed issue related to file detection using git ([68fdbd8](https://github.com/shiv-source/mapify-cli/commit/68fdbd8a66ce84a1beafcbdd6062e6124cf87729))
+
 ## [1.0.1](https://github.com/shiv-source/mapify-cli/compare/v1.0.0...v1.0.1) (2024-08-21)
 
 
