@@ -36,60 +36,64 @@ export class SiteMapGenerator {
         return dates.sort((a, b) => b.getTime() - a.getTime())
     }
 
-    async detectFileChangeWithGit() {
-        const hasGit = await this.git.checkIsRepo()
-        if (hasGit && (await this.gitHasAnyFileModified()) && !this.config.force) {
+    async detectFileChangeWithGit(): Promise<void> {
+        const isGitRepo = await this.git.checkIsRepo()
+        const isAnyLocalChanges = await this.gitHasAnyFileModified()
+        if (isGitRepo && isAnyLocalChanges && !this.config.force) {
             for (const page of this.config.pages) {
                 if (page.componentPath) {
                     const componentFiles = (await glob(page.componentPath)).filter(file => statSync(file).isFile())
-                    const changedFiles = componentFiles.filter(f => this.filesHaveChanges.includes(f))
-                    if (componentFiles.length && !changedFiles.length) {
-                        const componentPathPromises = componentFiles
-                            .map(f => path.resolve(this.config.appDir, f))
-                            .map(p => this.gitFileLastModifiedDate(p))
-                        const filesModifiedDates = await (await Promise.all(componentPathPromises)).filter(v => v != null)
-                        const [latestModifiedDate] = this.sortDatesInDescendingOrder(filesModifiedDates)
-                        if (latestModifiedDate) page.lastmod = latestModifiedDate.toISOString()
+
+                    // Check for changed files
+                    const changedFiles = componentFiles.filter(file => this.filesHaveChanges.includes(file))
+
+                    if (componentFiles.length > 0 && changedFiles.length === 0) {
+                        const fileModificationPromises = componentFiles.map(async file => {
+                            const fullPath = path.resolve(this.config.appDir, file)
+                            return this.gitFileLastModifiedDate(fullPath)
+                        })
+
+                        const modifiedDates = (await Promise.all(fileModificationPromises)).filter(date => date != null)
+                        const [latestModifiedDate] = this.sortDatesInDescendingOrder(modifiedDates)
+
+                        if (latestModifiedDate) {
+                            page.lastmod = latestModifiedDate.toISOString()
+                        }
                     }
                 }
             }
         }
+
         await this.createSitemap()
     }
 
     async writeFileIntoDirs(dirs: string[], text: string): Promise<void> {
         try {
-            const dirPaths = dirs.map(dir => path.resolve(this.config.appDir, dir))
-            const results = await Promise.all(dirPaths.map(p => fs.exists(p)))
+            const dirPaths = dirs.map((dir: string) => path.resolve(this.config.appDir, dir))
+            const dirChecks = await Promise.all(dirPaths.map(async (dir: string) => ({ dir, exists: await fs.exists(dir) })))
 
-            const [existsDir, notExistsDir] = results.reduce<[string[], string[]]>(
-                (acc, exists, index) => {
-                    if (exists) {
-                        acc[0].push(dirPaths[index])
-                    } else {
-                        acc[1].push(dirPaths[index])
-                    }
+            const [existingDirs, missingDirs] = dirChecks.reduce<[string[], string[]]>(
+                (acc, { dir, exists }) => {
+                    exists ? acc[0].push(dir) : acc[1].push(dir)
                     return acc
                 },
                 [[], []]
             )
 
-            notExistsDir.forEach(dir => console.warn(`The directory "${path.relative(this.config.appDir, dir)}" does not exist.`))
+            missingDirs.forEach(dir => console.warn(`The directory "${path.relative(this.config.appDir, dir)}" does not exist.`))
 
-            const filePromises = existsDir.map(async dir => {
+            const writePromises = existingDirs.map(async (dir: string) => {
                 const filePath = path.resolve(dir, this.sitemapFileName)
-                const outputDirPath = path.relative(this.config.appDir, dir)
+                const relativePath = path.relative(this.config.appDir, dir)
                 try {
                     await fs.writeFile(filePath, text, { encoding: 'utf-8' })
-                    console.info(
-                        `The file "${this.sitemapFileName}" has been successfully generated in "${outputDirPath}" location.`
-                    )
+                    console.info(`The file "${this.sitemapFileName}" has been successfully generated in "${relativePath}".`)
                 } catch (error) {
-                    console.error(`Failed to generate the file in "${outputDirPath}":`, error)
+                    console.error(`Failed to generate the file in "${relativePath}":`, error)
                 }
             })
 
-            await Promise.all(filePromises)
+            await Promise.all(writePromises)
         } catch (error) {
             console.error('An error occurred while writing files:', error)
             throw error
