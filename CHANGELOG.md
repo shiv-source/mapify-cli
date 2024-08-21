@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/shiv-source/mapify-cli/compare/v1.0.0...v1.0.1) (2024-08-21)
+
+
+### Bug Fixes
+
+* removed config form console.log. It's an unnecessary log ([485fa40](https://github.com/shiv-source/mapify-cli/commit/485fa400d909452450e385d41f81c735492a8c6e))
+
 # 1.0.0 (2024-08-21)
 
 
