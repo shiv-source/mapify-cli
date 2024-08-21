@@ -18,7 +18,6 @@ export class SiteMapGenerator {
     }
 
     init() {
-        console.log(this.config)
         this.detectFileChangeWithGit()
     }
 
