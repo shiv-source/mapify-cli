@@ -1,0 +1,57 @@
+name: CI Workflow
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'          # Monitor changes in the 'src' directory
+      - 'package.json'    # Monitor changes in 'package.json'
+      - 'tsconfig.*.json' # Monitor changes in any 'tsconfig' JSON file
+
+jobs:
+  release:
+    name: "Building and Releasing Source Code"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+        # Checks out the repository's code to the runner
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+        # Sets up pnpm with the specified version
+      - name: Set Up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+        # Sets up Node.js with the version defined in the matrix and enables caching for pnpm
+      - name: Set Up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+        # Installs project dependencies using pnpm
+      - name: Install Dependencies
+        run: pnpm install
+
+        # Builds the project using pnpm
+      - name: Build Project
+        run: pnpm build
+
+        # Releases the project to GitHub and NPM using semantic-release
+      - name: Release to GitHub and NPM
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub token for authentication
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}       # NPM token for publishing the package
+        run: npx semantic-release@24.0.0

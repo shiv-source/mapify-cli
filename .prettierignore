@@ -1,0 +1,6 @@
+# Ignore everything
+/*
+
+# Include only the src directory
+!/src
+!/test
