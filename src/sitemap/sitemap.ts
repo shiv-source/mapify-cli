@@ -38,8 +38,8 @@ export class SiteMapGenerator {
 
     async detectFileChangeWithGit(): Promise<void> {
         const isGitRepo = await this.git.checkIsRepo()
-        const isAnyLocalChanges = await this.gitHasAnyFileModified()
-        if (isGitRepo && isAnyLocalChanges && !this.config.force) {
+        if (isGitRepo && !this.config.force) {
+            await this.gitHasAnyFileModified()
             for (const page of this.config.pages) {
                 if (page.componentPath) {
                     const componentFiles = (await glob(page.componentPath)).filter(file => statSync(file).isFile())
@@ -48,17 +48,14 @@ export class SiteMapGenerator {
                     const changedFiles = componentFiles.filter(file => this.filesHaveChanges.includes(file))
 
                     if (componentFiles.length > 0 && changedFiles.length === 0) {
-                        const fileModificationPromises = componentFiles.map(async file => {
+                        const fileModificationPromises = componentFiles.map(async (file: string) => {
                             const fullPath = path.resolve(this.config.appDir, file)
                             return this.gitFileLastModifiedDate(fullPath)
                         })
 
                         const modifiedDates = (await Promise.all(fileModificationPromises)).filter(date => date != null)
                         const [latestModifiedDate] = this.sortDatesInDescendingOrder(modifiedDates)
-
-                        if (latestModifiedDate) {
-                            page.lastmod = latestModifiedDate.toISOString()
-                        }
+                        if (latestModifiedDate) page.lastmod = latestModifiedDate.toISOString()
                     }
                 }
             }

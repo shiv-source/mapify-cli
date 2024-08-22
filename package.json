@@ -19,7 +19,7 @@
     "build:watch": "concurrently \"pnpm run build:watch:cjs\" \"pnpm run build:watch:esm\"",
     "build": "pnpm clean && pnpm build:cjs && pnpm build:esm",
     "prettier:check": "prettier --config .prettierrc --check src/**/*{.ts,.json}",
-    "prettier:write": "prettier --config .prettierrc --write src/**/*{.ts,.json}"
+    "prettier:fix": "prettier --config .prettierrc --write src/**/*{.ts,.json}"
   },
   "keywords": [
     "mapify-cli",
