@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/shiv-source/mapify-cli/compare/v1.0.2...v1.0.3) (2024-08-22)
+
+
+### Bug Fixes
+
+* sitemap file issue on detecting git file history for lastmod ([0e872e7](https://github.com/shiv-source/mapify-cli/commit/0e872e7c445256f4c16592f0d58801a0312e94c7))
+
 ## [1.0.2](https://github.com/shiv-source/mapify-cli/compare/v1.0.1...v1.0.2) (2024-08-21)
 
 
