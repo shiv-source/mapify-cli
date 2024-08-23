@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/shiv-source/mapify-cli/compare/v1.0.3...v2.0.0) (2024-08-23)
+
+
+### Features
+
+* CLI package restructured & fix for CI environment ([1d5f2d0](https://github.com/shiv-source/mapify-cli/commit/1d5f2d02b037589092fd6af099301821d4430266))
+
+
+### BREAKING CHANGES
+
+* This release introduces a major restructuring of the  package. It includes updates to the CLI structure and fixes for CI environment compatibility. The changes affect the configuration and setup, making this a significant update from previous versions.
+
 ## [1.0.3](https://github.com/shiv-source/mapify-cli/compare/v1.0.2...v1.0.3) (2024-08-22)
 
 
