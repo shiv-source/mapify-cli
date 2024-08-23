@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
-import { cliArgs } from '../cli'
+import { mapifyCli } from '../index'
 
-cliArgs()
+// Execute mapifyCli by executer
+mapifyCli()

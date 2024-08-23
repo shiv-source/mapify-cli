@@ -4,18 +4,12 @@ import fs from 'fs-extra'
 import path from 'path'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { AppConfig, IAppPage, IPage, SitemapConfig } from '../interface'
-import { defaultInitConfigTemplate, SiteMapGenerator } from '../sitemap'
+import { Mapify } from './mapify'
+import { changeFreqList, mapifyInitConfigTemplate } from './mapify.constant'
+import { IPage, MapifyCliOption, MapifyConfig } from './mapify.interface'
 
-interface YargsOption {
-    config: string
-    init: boolean
-    generate: boolean
-}
-
-export const cliArgs = (): Partial<AppConfig> => {
+export const mapifyCli = () => {
     const appDir: string = path.resolve('./')
-
     const argv = yargs(hideBin(process.argv))
         .usage('Usage: $0 [options]')
         .options({
@@ -37,51 +31,28 @@ export const cliArgs = (): Partial<AppConfig> => {
                 type: 'boolean',
                 default: false
             }
-        }).argv as YargsOption
+        }).argv as MapifyCliOption
 
     const configFilePath = path.resolve(appDir, argv.config)
 
-    let appConfig: Partial<AppConfig> = {
-        config: argv.config,
-        init: argv.init,
-        generate: argv.generate,
-        configFilePath,
-        defaultChangeFreq: 'monthly',
-        defaultPriority: 0.7,
-        force: false,
-        appDir
-    }
-
     if (argv.init) {
         // Generate the default configuration file if `init` flag is provided
-        fs.writeFileSync(configFilePath, defaultInitConfigTemplate, 'utf8')
+        fs.writeFileSync(configFilePath, mapifyInitConfigTemplate, 'utf8')
         console.info(`The configuration file "${argv.config}" has been created successfully.`)
-        return appConfig
+        return
     }
 
     if (argv.generate) {
         try {
-            if (fs.existsSync(configFilePath)) {
-                const userConfig: SitemapConfig = require(configFilePath)
-
+            const isConfigFileExist = fs.existsSync(configFilePath)
+            if (isConfigFileExist) {
+                const mapifyConfig: MapifyConfig = require(configFilePath)
                 // Validate the user-provided configuration
-                validateConfig(userConfig)
+                validateConfig(mapifyConfig)
 
-                const pages: IAppPage[] = userConfig.pages.map((p: IPage) => ({ ...p, lastmod: new Date().toISOString() }))
-
-                appConfig = {
-                    ...appConfig,
-                    baseUrl: userConfig.baseUrl,
-                    outputPaths: userConfig.outputPaths,
-                    pages,
-                    defaultChangeFreq: userConfig.defaultChangeFreq ?? appConfig.defaultChangeFreq,
-                    defaultPriority: userConfig.defaultPriority ?? appConfig.defaultPriority,
-                    force: userConfig.force ?? appConfig.force
-                }
-
-                // Proceed with the sitemap generation logic...
-                const siteMapGenerator = new SiteMapGenerator(appConfig as AppConfig)
-                siteMapGenerator.init()
+                //Initialize mapify app
+                const mapify = new Mapify(mapifyConfig)
+                mapify.initialize()
             } else {
                 throw new Error(`The configuration file "${argv.config}" was not found at the path "${configFilePath}".`)
             }
@@ -90,12 +61,10 @@ export const cliArgs = (): Partial<AppConfig> => {
             process.exit(1)
         }
     }
-
-    return appConfig
 }
 
 // Validation function to ensure the required fields are present in the configuration
-const validateConfig = (config: SitemapConfig) => {
+const validateConfig = (config: MapifyConfig) => {
     if (!config.baseUrl) {
         throw new Error(`"baseUrl" is required. e.g., 'http://example.com'`)
     }
@@ -113,13 +82,23 @@ const validateConfig = (config: SitemapConfig) => {
     // Validate each page entry in the configuration
     config.pages.forEach((page: IPage, index: number) => {
         if (!page.path) {
-            throw new Error(`"path" is required for page at index ${index}.`)
+            throw new Error(`"path" is required for page at index ${index + 1}.`)
         }
-        if (typeof page.priority !== 'number' || page.priority < 0 || page.priority > 1) {
-            throw new Error(`"priority" should be a number between 0 and 1 for page at index ${index} at ${page.path}.`)
+        if (
+            typeof page.priority !== 'number' ||
+            page.priority < 0 ||
+            page.priority > 1 ||
+            !Number.isFinite(page.priority) ||
+            page.priority !== Number(page.priority.toFixed(2))
+        ) {
+            throw new Error(
+                `"priority" should be a number between 0 and 1, with no more than two decimal places, for page at index ${index + 1} at ${page.path}.`
+            )
         }
-        if (!page.componentPath) {
-            throw new Error(`"componentPath" is required for page at index ${index}.`)
+        if (page.changeFreq && !changeFreqList.includes(page.changeFreq)) {
+            throw new Error(
+                `Invalid "changeFreq" value at page index ${index + 1}. Expected one of: ${changeFreqList.join(', ')}, But received: "${page.changeFreq}".`
+            )
         }
     })
 }

@@ -22,7 +22,7 @@ npm install -g mapify-cli
 
 ### Commands
 
-- `--init`: Initializes a sample config file (`mapify-cli.js`).
+- `--init`: Initializes a sample config file (`mapify.config.js`).
 - `--config <path>`: Uses a custom configuration file.
 - `--generate`: Generates the `sitemap.xml` file based on the config.
 
@@ -39,16 +39,17 @@ npx mapify-cli --generate
 Create a configuration file (`mapify.config.js`) in your project root. The configuration should look like this:
 
 ```js
-/** @type {import('mapify-cli').SitemapConfig} */
+/** @type {import('mapify-cli').MapifyConfig} */
 
 module.exports = {
-    baseUrl: "http://example.com",
-    outputPaths: ['./dist/angular-ui/browser', './dist/angular-ui-serverless/browser'],
+    baseUrl: "http://example.com", // required
+    outputPaths: ['./dist/angular-ui/browser', './dist/angular-ui-serverless/browser'],  // required
     pages: [
         {
-            path: '/',
-            priority: 1,
-            componentPath: './src/app/pages/home/**'
+            path: '/',  // required
+            priority: 1,  // required
+            changeFreq: 'weekly',  // (optional) default = monthly
+            componentPath: './src/app/pages/home/**' // (optional)
         },
         {
             path: '/about',
@@ -67,6 +68,9 @@ module.exports = {
             componentPath: './src/app/pages/login/**'
         }
     ],
+    defaultChangeFreq: 'monthly', // optional
+    defaultPriority: 0.5, // optional
+    forceLastModificationDate: false // optional
 };
 ```
 
@@ -77,11 +81,11 @@ module.exports = {
 - `pages` (IPage[]): Array of page configurations.
   - `path` (string): The URL path of the page.
   - `priority` (number): The priority of the page (0.0 to 1.0).
-  - `changeFreq` (ChangeFreq): Optional. How frequently the page is likely to change (e.g., 'daily', 'weekly').
-  - `componentPath` (string): Path to the components used to detect the last modified date.
+  - `changeFreq` (ChangeFreq): Optional. How frequently the page is likely to change (e.g., 'daily', 'weekly'). Defaults to `defaultChangeFreq`.
+  - `componentPath` (string): Optional. Path to the components used to detect the last modified date.
 - `defaultChangeFreq` (ChangeFreq): Default change frequency for all pages.
 - `defaultPriority` (number): Default priority for all pages.
-- `force` (boolean): If true, skips Git detection for `lastmod` and uses the current date.
+- `forceLastModificationDate` (boolean): If true, skips Git detection for `lastmod` and uses the current date.
 
 ### GitHub Action
 
@@ -101,6 +105,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Generate Sitemap
         run: npx mapify-cli --generate

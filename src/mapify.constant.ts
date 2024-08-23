@@ -1,6 +1,8 @@
+export const changeFreqList = ['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never']
+
 // prettier-ignore
-export const defaultInitConfigTemplate  = 
-`/** @type {import('mapify-cli').SitemapConfig} */
+export const mapifyInitConfigTemplate  = 
+`/** @type {import('mapify-cli').MapifyConfig} */
 
 module.exports = {
     baseUrl: "http://example.com",
